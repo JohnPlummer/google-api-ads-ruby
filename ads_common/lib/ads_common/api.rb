@@ -26,7 +26,6 @@ require 'ads_common/errors'
 require 'ads_common/utils'
 require 'ads_common/auth/client_login_handler'
 require 'ads_common/auth/oauth_handler'
-require 'ads_common/auth/oauth2_handler'
 
 module AdsCommon
   class Api
@@ -111,15 +110,11 @@ module AdsCommon
         begin
           credentials = @credential_handler.credentials
           token = @auth_handler.get_token(credentials)
-        rescue AdsCommon::Errors::OAuthVerificationRequired,
-            AdsCommon::Errors::OAuth2VerificationRequired => e
+        rescue AdsCommon::Errors::OAuthVerificationRequired => e
           verification_code = (block_given?) ? yield(e.oauth_url) : nil
           # Retry with verification code if one provided.
           if verification_code
-            code_symbol =
-                e.kind_of?(AdsCommon::Errors::OAuthVerificationRequired) ?
-                :oauth_verification_code : :oauth2_verification_code
-            @credential_handler.set_credential(code_symbol, verification_code)
+            @credential_handler.set_credential(:oauth_verification_code, verification_code)
             retry
           else
             raise e
